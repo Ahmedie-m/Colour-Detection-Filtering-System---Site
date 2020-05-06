@@ -7,7 +7,6 @@ html, body {
     display: flex;
     justify-content: center;
     align-items: center;
-    font-family: 'Roboto', sans-serif;
     background: #efefef;
     overflow: hidden;
 }
@@ -18,7 +17,6 @@ button {
     display:inline-block;
     cursor:pointer;
     color: #efefef;
-    font-family: 'Roboto', sans-serif;
     font-size:15px;
     padding:6px 15px;
 }
