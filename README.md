@@ -1,2 +1,2 @@
-# Colour-Detection-Filtering-System---Site
-The website for the bachelor thesis
+Colour Detection & Filtering System - Website Code
+This is the website part of the development for my bachelor thesis device that sorts an orange by its ripeness
