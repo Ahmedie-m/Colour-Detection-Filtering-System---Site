@@ -1,15 +1,27 @@
 <html>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+	
+	<script src="https://code.highcharts.com/stock/highstock.js"></script>
+    <script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
+	
     <link rel="stylesheet" type="text/css" href="assets/css/main.css">
-    <script src="assets/js/source.js"></script>
     <div class="wrapper">
         <div class="panel">
             <div class="panel-header">
                 <h3 class="title">Statistics</h3>
 
-                <div class="orange-view">
-                    <button>Ripe</button>
-                    <button>Raw</button>
+                <div class="machine-status">
+					<span>Machine Status:</span>
+					<button
+					onclick="let win = window.open('http://192.168.1.165/arduino/statusfilter/1', '_blank'); setTimeout(function () { win.close();}, 1000);"
+					>
+					On
+					</button>
+					<button
+					onclick="let win = window.open('http://192.168.1.165/arduino/statusfilter/0', '_blank'); setTimeout(function () { win.close();}, 1000);"
+					>
+					Off
+					</button>
                 </div>
             </div>
 
@@ -17,36 +29,132 @@
                 <div class="categories">
                     <div class="category">
                         <span>Ripe Oranges</span>
-                        <span>0</span>
+                        <span id="totalRipeFruit"></span>
                     </div>
                     <div class="category">
                         <span>Raw Oranges</span>
-                        <span>0</span>
+                        <span id="totalRawFruit"></span>
                     </div>
                     <div class="category">
                         <span>Total</span>
-                        <span>0</span>
+                        <span id="totalFruit"></span>
                     </div>
                 </div>
 
-                <div class="chart">
-                    <div class="operating-systems">
-                        <span class="orange-type ripe-orange">
-                            <span class="dot"></span>Ripe Oranges
-                        </span>
-                        <span class="orange-type raw-orange">
-                            <span class="dot"></span>Raw Oranges
-                        </span>
-                    </div>
-
-                    <div class="ripe-stats">
-                        <span>453</span>
-                    </div>
-                    <div class="raw-stats">
-                        <span>453</span>
-                    </div>
-                </div>
+                <div id="chart"></div>
             </div>
         </div>
     </div>
 </html>
+
+<script type="text/javascript">
+	let chart;
+	let totalRipeFruit = 0;
+	let totalRawFruit = 0;
+	let totalFruit = 0;
+    let ripeFruitArray = [];
+	let ripeFruitRGB = [];
+    let rawFruitArray = [];
+	let rawFruitRGB = [];
+
+	$(document).ready(function() {
+	
+		$.getJSON('json.php', function (data) {
+		
+			let counterLoop = function() {
+				for (let i = 0; i < data.length; i++) {
+					let fruitType = data[i].type.toLowerCase();
+                    if (fruitType.localeCompare('ripe') === 0) {
+                        totalRipeFruit++;
+                        $("#totalRipeFruit").text(totalRipeFruit);
+                        ripeFruitArray.push([parseInt(data[i].time), parseInt(data[i].red)]);
+						ripeFruitRGB.push([parseInt(data[i].red), parseInt(data[i].green),  parseInt(data[i].blue)])
+                    }
+                    if (fruitType.localeCompare('raw') === 0) {
+                        totalRawFruit++;
+                        $("#totalRawFruit").text(totalRawFruit);
+                        rawFruitArray.push([parseInt(data[i].time), parseInt(data[i].red)]);
+                        rawFruitRGB.push([parseInt(data[i].red), parseInt(data[i].green),  parseInt(data[i].blue)])
+                    }
+				}
+			}
+			counterLoop();
+			totalFruit = data.length;
+			$("#totalFruit").text(totalFruit);
+			chart = Highcharts.chart('chart', {
+				
+				chart: {
+					renderTo: 'container',
+					defaultSeriesType: 'spline',
+				},
+				
+				title: {
+					text: 'Ripe to Raw - Fruit Representation'
+				},
+
+				subtitle: {
+					text: 'Counter for Ripe vs Raw fruit'
+				},
+				
+				xAxis: {
+					type: 'datetime'
+				},
+				
+				yAxis: {
+					title: {
+						text: 'Redness of Fruit'
+					}
+				},
+				
+				tooltip: {
+                    formatter: function(){
+                        let serie = this.series;
+                        let index = serie.data.indexOf(this.point);
+                        let s;
+                        $.each(serie.options.composition, function(name, value) {
+                            s = '<b>' + name + ':</b> ' + value[index] + '<br>';
+                        });
+                        return s;
+                    }
+				},
+
+				legend: {
+					layout: 'vertical',
+					align: 'right',
+					verticalAlign: 'middle'
+				},
+				
+				colors: ['#F5A623', '#80B354'],
+
+				series: [{
+					name: 'Ripe',
+                    composition: {
+                        "RGB Values": ripeFruitRGB
+                    },
+					data: ripeFruitArray,
+				}, {
+					name: 'Raw',
+                    composition: {
+                        "RGB Values": rawFruitRGB
+                    },
+					data: rawFruitArray
+				}],
+
+				responsive: {
+					rules: [{
+						condition: {
+							maxWidth: 500
+						},
+						chartOptions: {
+							legend: {
+								layout: 'horizontal',
+								align: 'center',
+								verticalAlign: 'bottom'
+							}
+						}
+					}]
+				}
+			});
+		});
+	});
+</script>
